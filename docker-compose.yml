@@ -1,0 +1,29 @@
+version: '2'
+services:
+  vscode:
+    image: gitpod/openvscode-server
+    network_mode: bridge
+    restart: unless-stopped
+    volumes:
+      - .:/home/workspace:cached
+    ports:
+      - 3000:3000
+  
+  mailcatcher-basic-auth-proxy:
+    image: ipepe/nginx-basic-auth # https://github.com/ipepe-oss/nginx-basic-auth-proxy
+    network_mode: bridge
+    restart: unless-stopped
+    ports:
+      - 3001:80
+    expose:
+      - 80
+    environment:
+        PROXY_PASS: http://vscode:3000
+        BASIC_AUTH_USERNAME: admin
+        BASIC_AUTH_PASSWORD: admin
+    links:
+      - vscode
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:code.ipepe.pl"
