@@ -12,7 +12,10 @@ services:
       - 3333:3000
     expose:
       - 3000
-  
+    links:
+      - postgres_db
+      - redis
+
   vscode-basic-auth-proxy:
     image: ipepe/nginx-basic-auth # https://github.com/ipepe-oss/nginx-basic-auth-proxy
     network_mode: bridge
@@ -47,3 +50,13 @@ services:
     volumes:
       - ./data/db:/var/lib/postgresql/data
       - ./data/dbdumps:/dbdumps
+
+  redis:
+    image: redis:latest
+    network_mode: bridge
+    restart: always
+    expose:
+      - 6379
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes
