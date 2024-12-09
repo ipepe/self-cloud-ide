@@ -10,17 +10,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
     ports:
       - 3333:3000
-  
-  ngrok:
-    image: ngrok/ngrok
-    network_mode: bridge
-    restart: unless-stopped
-    command: ngrok http vscode:3000
-    ports:
-      - 4040:4040
-      - 4443:4443
-    links:
-      - vscode
+    expose:
+      - 3000
   
   vscode-basic-auth-proxy:
     image: ipepe/nginx-basic-auth # https://github.com/ipepe-oss/nginx-basic-auth-proxy
@@ -28,6 +19,8 @@ services:
     restart: unless-stopped
     ports:
       - 3001:80
+      - 3443:443
+      - 8090:8090
     expose:
       - 80
     environment:
