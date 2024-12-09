@@ -1,15 +1,28 @@
 version: '2'
 services:
   vscode:
-    image: gitpod/openvscode-server
+    build: .
     network_mode: bridge
     restart: unless-stopped
+    privileged: true
     volumes:
       - .:/home/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
     ports:
-      - 3000:3000
+      - 3333:3000
   
-  mailcatcher-basic-auth-proxy:
+  ngrok:
+    image: ngrok/ngrok
+    network_mode: bridge
+    restart: unless-stopped
+    command: ngrok http vscode:3000
+    ports:
+      - 4040:4040
+      - 4443:4443
+    links:
+      - vscode
+  
+  vscode-basic-auth-proxy:
     image: ipepe/nginx-basic-auth # https://github.com/ipepe-oss/nginx-basic-auth-proxy
     network_mode: bridge
     restart: unless-stopped
@@ -18,12 +31,26 @@ services:
     expose:
       - 80
     environment:
-        PROXY_PASS: http://vscode:3000
-        BASIC_AUTH_USERNAME: admin
-        BASIC_AUTH_PASSWORD: admin
+      PROXY_PASS: http://vscode:3000
+      BASIC_AUTH_USERNAME: admin
+      BASIC_AUTH_PASSWORD: admin
     links:
       - vscode
     labels:
       - "traefik.enable=true"
       - "traefik.port=80"
       - "traefik.frontend.rule=Host:code.ipepe.pl"
+
+  postgres_db:
+    network_mode: bridge
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: webapp
+      POSTGRES_USER: webapp
+      POSTGRES_PASSWORD: Password1
+    expose:
+      - 5432
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+      - ./data/dbdumps:/dbdumps
